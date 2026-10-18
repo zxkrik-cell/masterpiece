@@ -1,34 +1,37 @@
-# MASTERPIECE — как выложить
+// Bump CACHE when you change any file, so phones pick up the update.
+const CACHE = "masterpiece-v1";
+const SHELL = ["./", "./index.html", "./privacy.html", "./manifest.webmanifest",
+  "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
 
-Папка `site/` — готовый сайт. Его можно открыть с любого хостинга с HTTPS.
+self.addEventListener("install", e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+});
 
-## 1. Выложить на GitHub Pages (бесплатно)
-1. Создай репозиторий на github.com, например `masterpiece`.
-2. Загрузи в него все файлы из этой папки (`index.html`, `privacy.html`, `sw.js`, `manifest.webmanifest`, папку `icons`).
-3. Settings → Pages → Source: *Deploy from a branch*, ветка `main`, папка `/ (root)`.
-4. Через минуту сайт будет по адресу `https://<твой-ник>.github.io/masterpiece/`.
+self.addEventListener("activate", e => {
+  e.waitUntil(caches.keys()
+    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    .then(() => self.clients.claim()));
+});
 
-Netlify и Cloudflare Pages работают так же: перетащи папку в интерфейс.
+self.addEventListener("fetch", e => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  const isFont = url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
+  if (url.origin !== self.location.origin && !isFont) return;
 
-## 2. Проверить на телефоне
-Открой ссылку в Safari или Chrome. Выбери «Поделиться» → «На экран «Домой»» (iPhone) или меню → «Установить приложение» (Android). Появится значок MASTERPIECE, который открывается без адресной строки.
-
-## 3. Telegram Mini App
-1. В Telegram открой @BotFather, отправь `/newbot`, укажи имя и username бота.
-2. Отправь `/newapp`, выбери своего бота, задай название, описание и фото (640×360), укажи ссылку на сайт из шага 1.
-3. BotFather выдаст ссылку вида `t.me/<бот>/<приложение>`. Её можно публиковать в канале или в описании.
-4. Для кнопки меню у бота: `/setmenubutton`, та же ссылка на сайт.
-
-Mini App требует HTTPS, поэтому локальный файл в Telegram не откроется.
-
-Необязательно: чтобы Telegram подстроил цвета и кнопку «Назад», добавь в `<head>` строку
-`<script src="https://telegram.org/js/telegram-web-app.js"></script>`.
-Приложение работает и без неё.
-
-## 4. Обновления
-Когда меняешь файлы, увеличь версию в `sw.js` (строка `const CACHE = "masterpiece-v1"` → `v2`). Тогда у пользователей подтянется новая версия.
-
-## Важно перед публикацией
-- В `privacy.html` замени `[ДАТА]` и `[КОНТАКТ]`.
-- Данные хранятся в браузере каждого пользователя. Напоминай им про резервную копию в настройках, особенно в Telegram: при очистке кэша Telegram или переустановке данные могут пропасть.
-- В `index.html` в переменной `DONATE_URL` укажи ссылку на донат, когда она будет готова.
+  // HTML: network first, so updates arrive; cache is the offline fallback
+  if (req.mode === "navigate" || req.destination === "document") {
+    e.respondWith(fetch(req).then(res => {
+      const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res;
+    }).catch(() => caches.match(req).then(r => r || caches.match("./index.html"))));
+    return;
+  }
+  // everything else: cache first, then fill the cache
+  e.respondWith(caches.match(req).then(hit => hit || fetch(req).then(res => {
+    if (res.ok || res.type === "opaque") {
+      const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy));
+    }
+    return res;
+  })));
+});
