@@ -227,6 +227,34 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
   .card:hover, .btn:hover, .nav-btn:hover, .fold-btn:hover { transform: none; }
   .card:hover { border-color: var(--line); box-shadow: none; }
 }
+
+/* quick rating stars */
+.stars { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 4px; }
+.stars button { background: none; border: 0; padding: 2px 3px; cursor: pointer; color: var(--muted); font-size: 22px; line-height: 1; transition: transform .15s ease, color .15s; }
+.stars button:hover { transform: scale(1.15); }
+.stars button.on { color: var(--accent); }
+.theme-cinema .stars button.on { color: #f3d67a; }
+/* status cycling on cards */
+.card .status { cursor: pointer; width: max-content; padding: 4px 8px 4px 0; margin-left: -2px; border-radius: var(--r); transition: color .2s, background-color .2s; }
+.card .status:hover { color: var(--text); background: var(--surface2); }
+.card .status:active { transform: scale(.96); }
+/* recap */
+.recap-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.recap-top select { width: auto; }
+.recap-big { text-align: center; padding: 8px 0 4px; }
+.recap-num { font-family: var(--display); font-size: 96px; line-height: 1; font-weight: 700; }
+.recap-sub { color: var(--muted); font-size: 15px; }
+.recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rcell { border: 1px solid var(--line); padding: 12px 14px; border-radius: var(--r); background: var(--surface); min-width: 0; }
+.rv { font-family: var(--display); font-size: 24px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.bar { display: grid; grid-template-columns: 96px 1fr 32px; gap: 10px; align-items: center; font-size: 14px; margin: 8px 0; }
+.bar .track { background: var(--surface2); height: 8px; }
+.bar i { display: block; height: 8px; background: var(--accent); width: 0; transition: width .6s ease; }
+.bar span:last-child { text-align: right; color: var(--muted); }
+.goalbar { height: 10px; background: var(--surface2); margin-top: 8px; }
+.goalbar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .6s ease; }
+@media (max-width: 800px) { .recap-num { font-size: 72px; } .recap-grid { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -242,6 +270,7 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
     <div class="divider"></div>
     <nav class="nav" id="nav"></nav>
     <div class="side-foot">
+      <button class="nav-btn" id="recapBtn" type="button" aria-label="Итоги года" data-tip="Итоги года"></button>
       <button class="nav-btn" id="themeBtn" type="button" aria-label="Сменить тему" data-tip="Сменить тему"></button>
       <label class="nav-btn" data-tip="Импорт .md" style="cursor:pointer;" aria-label="Импорт .md">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 20h16"/></svg>
@@ -340,18 +369,51 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
         <h2 id="dTitle"></h2>
         <div class="meta" id="dMeta"></div>
         <div class="score" id="dScore"></div>
+        <div class="stars" id="dStars" aria-label="Оценка звёздами"></div>
       </div>
     </div>
     <section class="review" id="dReview"></section>
     <div class="folds" id="dFolds"></div>
     <div class="actions">
       <button class="btn" id="vExp" type="button">Экспорт .md</button>
+      <button class="btn" id="vShare" type="button">Поделиться картинкой</button>
       <span class="spacer"></span>
       <button class="btn" id="vClose" type="button">Закрыть</button>
       <button class="btn primary" id="vEdit" type="button">Редактировать</button>
     </div>
   </div>
 
+  <div class="sheet" id="recapSheet" role="dialog" aria-modal="true" aria-labelledby="recapTitle" hidden>
+    <div class="recap-top">
+      <h2 id="recapTitle">Итоги</h2>
+      <select id="recapYear" aria-label="Год"></select>
+    </div>
+    <div class="recap-big">
+      <div class="recap-num" id="rTotal">0</div>
+      <div class="recap-sub">просмотрено и прочитано</div>
+    </div>
+    <div class="recap-grid">
+      <div class="rcell"><div class="rv" id="rAvg">—</div><div class="rl">средняя оценка</div></div>
+      <div class="rcell"><div class="rv" id="rGenre">—</div><div class="rl">любимый жанр</div></div>
+      <div class="rcell"><div class="rv" id="rBest">—</div><div class="rl">лучшее</div></div>
+      <div class="rcell"><div class="rv" id="rOpen">0</div><div class="rl">сейчас в процессе</div></div>
+    </div>
+    <div class="panel" style="padding:16px 18px;">
+      <div class="hint">По типам</div>
+      <div id="rBars"></div>
+    </div>
+    <div class="panel" style="padding:16px 18px;">
+      <div class="row-inline">
+        <span class="hint">Цель на год</span>
+        <input type="number" id="goalInput" min="0" max="1000" style="width:100px;" aria-label="Цель на год">
+      </div>
+      <div class="goalbar"><span id="goalFill"></span></div>
+      <div class="hint" id="goalText"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="recapClose" type="button">Закрыть</button>
+    </div>
+  </div>
   <div class="sheet" id="editSheet" role="dialog" aria-modal="true" hidden>
     <h2 id="sheetTitle">Новая запись</h2>
     <div class="row">
@@ -413,6 +475,8 @@ const ICONS = {
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>',
   gear: '<path d="M10.31 5.21 L10.68 2.59 L13.32 2.59 L13.69 5.21 L15.61 6.00 L17.72 4.41 L19.59 6.28 L18.00 8.39 L18.79 10.31 L21.41 10.68 L21.41 13.32 L18.79 13.69 L18.00 15.61 L19.59 17.72 L17.72 19.59 L15.61 18.00 L13.69 18.79 L13.32 21.41 L10.68 21.41 L10.31 18.79 L8.39 18.00 L6.28 19.59 L4.41 17.72 L6.00 15.61 L5.21 13.69 L2.59 13.32 L2.59 10.68 L5.21 10.31 L6.00 8.39 L4.41 6.28 L6.28 4.41 L8.39 6.00 Z M12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6z"/>'
 };
+ICONS.chart = '<path d="M5 20V11M12 20V5M19 20v-7"/>';
+ICONS.share = '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.9l7.6-4.4M8.2 13.1l7.6 4.4"/>';
 const CAT_ICON = { "Фильм": "film", "Сериал": "tv", "Книга": "book", "Мультфильм": "moon", "Аниме": "star", "Игра": "game", "Другое": "dots" };
 const DONATE_URL = ""; // вставь ссылку на Boosty / Ko-fi, когда будет готова; пока кнопка скрыта
 
@@ -438,7 +502,7 @@ items.forEach(i => {
   i.quotes = normQuotes(i.quotes);
 });
 
-let settings = { theme: "cinema", accent: "", bannerPos: 35, bannerData: "", texture: true, reduceMotion: false };
+let settings = { theme: "cinema", accent: "", bannerPos: 35, bannerData: "", texture: true, reduceMotion: false, goal: 0 };
 try { settings = { ...settings, ...JSON.parse(localStorage.getItem(SKEY) || "{}") }; } catch (e) {}
 
 let screen = "library";
@@ -558,6 +622,7 @@ function card(i, idx = 0) {
 function showSheet(which) {
   $("viewSheet").hidden = which !== "view";
   $("editSheet").hidden = which !== "edit";
+  $("recapSheet").hidden = which !== "recap";
   $("overlay").classList.add("open");
 }
 function closeAll() { $("overlay").classList.remove("open"); }
@@ -597,6 +662,7 @@ function openView(id) {
   }
   if (it.notes) folds += fold("notes", "Заметки", "", `<div class="note-text">${esc(it.notes)}</div>`);
   $("dFolds").innerHTML = folds;
+  $("dStars").innerHTML = [1,2,3,4,5,6,7,8,9,10].map(n => `<button type="button" data-n="${n}" class="${it.rating >= n ? "on" : ""}" aria-label="Оценка ${n}">★</button>`).join("");
   showSheet("view");
 }
 
@@ -669,7 +735,8 @@ function formToItem() {
     review: $("f_review").value.trim(),
     quotes,
     notes: $("f_notes").value.trim(),
-    created: old ? old.created : new Date().toISOString()
+    created: old ? old.created : new Date().toISOString(),
+    finished: $("f_status").value === "done" ? (old && old.finished && old.status === "done" ? old.finished : todayISO()) : ""
   };
 }
 
@@ -683,6 +750,7 @@ function toMd(it) {
     `status: ${it.status}`,
     it.cover && !it.cover.startsWith("data:") ? `cover: ${JSON.stringify(it.cover)}` : null,
     `created: ${it.created.slice(0, 10)}`,
+    it.finished ? `finished: ${it.finished}` : null,
     `tags: [${it.category.toLowerCase()}]`
   ].filter(Boolean).join("\n");
   let body = `# ${it.title}\n`;
@@ -741,6 +809,7 @@ function parseMd(text, fallbackTitle) {
     status: STATUSES.includes(meta.status) ? meta.status : "done",
     cover: unq(meta.cover),
     review, quotes, notes,
+    finished: meta.finished || "",
     created: isNaN(created) ? new Date().toISOString() : created.toISOString()
   };
 }
@@ -794,7 +863,9 @@ $("sortSel").addEventListener("change", e => { sortKey = e.target.value; render(
 $("search").addEventListener("input", e => { query = e.target.value; render(); });
 $("grid").addEventListener("click", e => {
   const c = e.target.closest(".card");
-  if (c) { buzz(); openView(c.dataset.id); }
+  if (!c) return;
+  if (e.target.closest(".status")) { buzz(); cycleStatus(c.dataset.id); return; }
+  buzz(); openView(c.dataset.id);
 });
 $("grid").addEventListener("keydown", e => {
   const c = e.target.closest(".card");
@@ -893,9 +964,193 @@ $("clearBtn").addEventListener("click", () => {
   items = []; persist(); render();
 });
 
+
+// ----- Quick status cycling, sharing, year recap -----
+const NEXT_STATUS = { planned: "progress", progress: "done", done: "planned" };
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const doneYear = it => (it.finished || it.created || "").slice(0, 4);
+
+function cycleStatus(id) {
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  it.status = NEXT_STATUS[it.status] || "planned";
+  it.finished = it.status === "done" ? todayISO() : "";
+  persist(); render();
+}
+
+function loadImg(src) {
+  return new Promise(resolve => {
+    const im = new Image();
+    im.crossOrigin = "anonymous";
+    im.onload = () => resolve(im);
+    im.onerror = () => resolve(null);
+    im.src = src;
+  });
+}
+
+function wrapText(x, text, maxW, maxLines) {
+  const words = String(text || "").replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  const lines = [];
+  let cur = "";
+  for (const w of words) {
+    const test = cur ? cur + " " + w : w;
+    if (x.measureText(test).width <= maxW) { cur = test; continue; }
+    if (cur) lines.push(cur);
+    cur = w;
+    if (lines.length === maxLines) break;
+  }
+  if (cur && lines.length < maxLines) lines.push(cur);
+  const used = lines.join(" ").length;
+  if (used < words.join(" ").length && lines.length) {
+    let last = lines[lines.length - 1];
+    while (last.length && x.measureText(last + "…").width > maxW) last = last.slice(0, -1);
+    lines[lines.length - 1] = last.trimEnd() + "…";
+  }
+  return lines;
+}
+
+async function makeShareCard(it) {
+  const W = 1080, H = 1350, IMG_H = 600;
+  const mag = settings.theme === "magazine";
+  const bg = mag ? "#f2ece0" : "#0c0a0b";
+  const fg = mag ? "#1c1a16" : "#ece4e0";
+  const mute = mag ? "#6b6357" : "#86797a";
+  const acc = settings.accent || (mag ? "#2b4a8b" : "#d7262e");
+  const serif = mag ? "'Fraunces', Georgia, serif" : "'Cormorant Garamond', Georgia, serif";
+  const sans = mag ? "'Source Serif 4', Georgia, serif" : "'Manrope', system-ui, sans-serif";
+  const logoF = mag ? "'Bodoni Moda', Georgia, serif" : "'Cinzel', Georgia, serif";
+  try { await document.fonts.ready; } catch (e) {}
+
+  const draw = async withImg => {
+    const c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    const x = c.getContext("2d");
+    x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    const img = withImg && it.cover ? await loadImg(it.cover) : null;
+    if (img) {
+      const s = Math.max(W / img.width, IMG_H / img.height);
+      const dw = img.width * s, dh = img.height * s;
+      x.drawImage(img, (W - dw) / 2, (IMG_H - dh) / 2, dw, dh);
+      const g = x.createLinearGradient(0, IMG_H - 240, 0, IMG_H);
+      g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, bg);
+      x.fillStyle = g; x.fillRect(0, IMG_H - 240, W, 240);
+    } else {
+      x.fillStyle = mag ? "#ebe4d4" : "#1f1a1c"; x.fillRect(0, 0, W, IMG_H);
+      x.fillStyle = mute; x.font = `600 280px ${serif}`;
+      x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillText((it.title || "?").charAt(0).toUpperCase(), W / 2, IMG_H / 2);
+    }
+    x.textAlign = "left"; x.textBaseline = "alphabetic";
+    let y = IMG_H + 70;
+    x.fillStyle = fg; x.font = `700 92px ${serif}`;
+    wrapText(x, it.title, W - 160, 2).forEach(l => { x.fillText(l, 80, y); y += 100; });
+    x.fillStyle = mute; x.font = `400 36px ${sans}`;
+    x.fillText([it.category, it.genre, it.year].filter(Boolean).join(" / "), 80, y + 6);
+    y += 72;
+    if (it.rating) {
+      x.fillStyle = acc; x.font = `700 64px ${serif}`;
+      const rt = `${it.rating}/10`;
+      x.fillText(rt, 80, y + 28);
+      const rw = x.measureText(rt).width;
+      x.fillStyle = mute; x.font = `italic 400 38px ${serif}`;
+      x.fillText(ratingWord(it.rating), 80 + rw + 24, y + 26);
+      y += 80;
+    }
+    if (it.review) {
+      x.fillStyle = fg; x.font = `400 36px ${sans}`;
+      wrapText(x, it.review, W - 160, 4).forEach(l => { x.fillText(l, 80, y); y += 50; });
+    }
+    x.fillStyle = mute; x.font = `400 30px ${logoF}`;
+    x.fillText("MASTERPIECE", 80, H - 70);
+    x.textAlign = "right"; x.fillText(statusLabel(it), W - 80, H - 70);
+    return c;
+  };
+
+  let canvas = await draw(true);
+  try { canvas.getContext("2d").getImageData(0, 0, 1, 1); }
+  catch (e) { canvas = await draw(false); }  // remote cover blocked by CORS: draw without it
+  return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+}
+
+function downloadBlob(name, blob) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+async function shareCard(it) {
+  const blob = await makeShareCard(it);
+  if (!blob) return;
+  const name = slug(it.title) + "-card.png";
+  const file = new File([blob], name, { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: it.title }); return; }
+    catch (e) { if (e.name === "AbortError") return; }
+  }
+  downloadBlob(name, blob);
+}
+
+function openRecap() {
+  const years = [...new Set(items.filter(i => i.status === "done").map(doneYear).filter(Boolean))].sort().reverse();
+  if (!years.length) years.push(String(new Date().getFullYear()));
+  const prev = $("recapYear").value;
+  $("recapYear").innerHTML = years.map(y => `<option>${y}</option>`).join("");
+  $("recapYear").value = years.includes(prev) ? prev : years[0];
+  $("goalInput").value = settings.goal || "";
+  renderRecap();
+  showSheet("recap");
+}
+
+function renderRecap() {
+  const y = $("recapYear").value || String(new Date().getFullYear());
+  const done = items.filter(i => i.status === "done" && doneYear(i) === y);
+  const rated = done.filter(i => i.rating);
+  const avg = rated.length ? (rated.reduce((s, i) => s + i.rating, 0) / rated.length).toFixed(1) : "—";
+  const genreCount = {};
+  done.forEach(i => { if (i.genre) genreCount[i.genre] = (genreCount[i.genre] || 0) + 1; });
+  const topGenre = Object.entries(genreCount).sort((a, b) => b[1] - a[1])[0];
+  const best = [...rated].sort((a, b) => b.rating - a.rating)[0];
+  $("rTotal").textContent = done.length;
+  $("rAvg").textContent = avg;
+  $("rGenre").textContent = topGenre ? topGenre[0] : "—";
+  $("rBest").textContent = best ? `${best.title} · ${best.rating}` : "—";
+  $("rOpen").textContent = items.filter(i => i.status === "progress").length;
+
+  const byCat = CATS.map(c => [c, done.filter(i => i.category === c).length]).filter(([, n]) => n > 0);
+  const max = Math.max(1, ...byCat.map(([, n]) => n));
+  $("rBars").innerHTML = byCat.length
+    ? byCat.map(([c, n]) => `<div class="bar"><span>${esc(c)}</span><div class="track"><i style="width:${Math.round(n / max * 100)}%"></i></div><span>${n}</span></div>`).join("")
+    : `<div class="hint" style="margin-top:8px;">В этом году пока ничего не отмечено как просмотренное.</div>`;
+
+  const g = settings.goal || 0;
+  $("goalFill").style.width = g ? Math.min(100, done.length / g * 100) + "%" : "0%";
+  $("goalText").textContent = g ? `${done.length} из ${g}` : "Поставь цель, и здесь появится прогресс.";
+}
+
+$("recapBtn").addEventListener("click", openRecap);
+$("recapYear").addEventListener("change", renderRecap);
+$("recapClose").addEventListener("click", closeAll);
+$("goalInput").addEventListener("input", e => { settings.goal = +e.target.value || 0; saveSettings(); renderRecap(); });
+$("vShare").addEventListener("click", () => {
+  const it = items.find(x => x.id === viewingId);
+  if (it) shareCard(it);
+});
+$("dStars").addEventListener("click", e => {
+  const b = e.target.closest("button[data-n]");
+  const it = items.find(x => x.id === viewingId);
+  if (!b || !it) return;
+  const n = +b.dataset.n;
+  it.rating = it.rating === n ? "" : n;
+  persist(); render(); openView(viewingId);
+});
+
 // ----- Init -----
 $("f_category").innerHTML = CATS.map(c => `<option>${esc(c)}</option>`).join("");
 $("settingsBtn").innerHTML = svg("gear");
+$("recapBtn").innerHTML = svg("chart");
+$("vShare").insertAdjacentHTML("afterbegin", "");
 applyAll();
 persist();
 render();
