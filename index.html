@@ -204,7 +204,9 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
   .hero h1 { font-size: 44px; }
   .hero p { font-size: 15px; }
   #addBtn { position: fixed; right: 16px; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); z-index: 6; width: 58px; height: 58px; padding: 0; border-radius: 999px; box-shadow: 0 8px 22px rgba(0,0,0,.4); font-size: 0; }
-  #addBtn::before { content: "+"; font-size: 30px; line-height: 1; font-family: var(--body); color: #fff; }
+  #addBtn::before, #addBtn::after { content: ""; position: absolute; left: 50%; top: 50%; background: #fff; border-radius: 2px; transform: translate(-50%, -50%); }
+  #addBtn::before { width: 22px; height: 3px; }
+  #addBtn::after { width: 3px; height: 22px; }
   .theme-magazine #addBtn { border-radius: 0; }
   input, select, textarea { font-size: 16px; }
   .btn { min-height: 44px; }
@@ -300,6 +302,7 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
         <div class="row-inline">
           <span class="hint">Положение по вертикали</span>
           <input type="range" id="bannerPos" min="0" max="100" aria-label="Положение картинки">
+          <output id="bannerPosOut" class="hint" style="min-width:40px;text-align:right;"></output>
         </div>
       </div>
 
@@ -463,6 +466,7 @@ function applyAll() {
   if (settings.accent) document.body.style.setProperty("--accent", settings.accent);
   else document.body.style.removeProperty("--accent");
   document.documentElement.style.setProperty("--banner-pos", settings.bannerPos + "%");
+  $("bannerPosOut").textContent = settings.bannerPos + "%";
   if (settings.bannerData) document.documentElement.style.setProperty("--banner-img", `url("${settings.bannerData}")`);
   else document.documentElement.style.removeProperty("--banner-img");
   $("themeBtn").innerHTML = svg("contrast");
