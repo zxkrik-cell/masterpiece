@@ -255,6 +255,31 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
 .goalbar { height: 10px; background: var(--surface2); margin-top: 8px; }
 .goalbar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .6s ease; }
 @media (max-width: 800px) { .recap-num { font-size: 72px; } .recap-grid { grid-template-columns: 1fr 1fr; } }
+
+/* undo toast */
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; background: var(--surface2); color: var(--text); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 8px 8px 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.4); max-width: calc(100vw - 32px); font-size: 15px; animation: rise .25s ease both; }
+.toast button { background: none; border: 0; color: var(--accent); font-weight: 700; cursor: pointer; padding: 8px 10px; border-radius: var(--r); }
+.toast button:hover { background: var(--surface); }
+@media (max-width: 800px) { .toast { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); } }
+
+/* quick delete */
+#viewSheet { position: relative; }
+#viewSheet .dinfo { padding-right: 44px; }
+.vdel { position: absolute; top: 14px; right: 14px; background: none; border: 0; color: var(--muted); cursor: pointer; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--r); transition: color .2s, background-color .2s; }
+.vdel:hover { color: #e0555b; background: var(--surface2); }
+.vdel svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* welcome */
+.welcome { margin: 12px 28px 0; padding: 22px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); display: grid; gap: 12px; }
+.welcome h2 { font-family: var(--display); margin: 0; font-size: 30px; }
+.welcome p { margin: 0; color: var(--muted); }
+.steps { margin: 0; padding-left: 20px; display: grid; gap: 8px; line-height: 1.55; }
+.steps b { font-weight: 600; }
+/* status filter */
+#statusFilter { width: auto; padding: 8px 10px; }
+/* review text size */
+.review-text { font-size: var(--review-size, 18px); }
+@media (max-width: 800px) { .toolbar select { flex: 1 1 calc(50% - 4px); } .welcome { margin: 12px 14px 0; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -291,6 +316,13 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
     <section id="libraryScreen">
       <div class="toolbar">
         <input class="search" id="search" type="search" placeholder="Поиск по всем записям">
+        <select id="statusFilter" aria-label="Статус">
+          <option value="all">Любой статус</option>
+          <option value="progress">В процессе</option>
+          <option value="planned">В планах</option>
+          <option value="open">В процессе и в планах</option>
+          <option value="done">Просмотрено</option>
+        </select>
         <select id="genreFilter" aria-label="Жанр"></select>
         <select id="sortSel" aria-label="Сортировка">
           <option value="new">Сначала новые</option>
@@ -299,6 +331,19 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
         </select>
         <button class="btn primary" id="addBtn" type="button">+ Добавить</button>
       </div>
+      <section class="welcome" id="welcome" hidden>
+        <h2>Добро пожаловать</h2>
+        <p>Личный дневник просмотренного, прочитанного и пройденного. Начать можно за минуту:</p>
+        <ol class="steps">
+          <li><b>Добавь первую запись.</b> Название, тип и, если хочешь, оценка.</li>
+          <li><b>Напиши пару строк.</b> Рецензия или заметка делают запись твоей.</li>
+          <li><b>Сохрани резервную копию.</b> Она в настройках. Так библиотека переедет на другое устройство.</li>
+        </ol>
+        <div class="row-inline">
+          <button class="btn primary" id="welcomeAdd" type="button">Добавить первую запись</button>
+          <button class="btn" id="welcomeSample" type="button">Посмотреть на примере</button>
+        </div>
+      </section>
       <div class="grid-wrap"><div class="grid" id="grid"></div></div>
     </section>
 
@@ -310,6 +355,7 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
           <div class="seg" role="group" aria-label="Тема">
             <button type="button" data-theme="cinema">Кинематограф</button>
             <button type="button" data-theme="magazine">Журнал</button>
+            <button type="button" data-theme="auto">Как в системе</button>
           </div>
         </div>
         <div class="row-inline">
@@ -318,6 +364,11 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
           <button class="btn" id="accentReset" type="button">Вернуть по умолчанию</button>
         </div>
         <label class="check"><input type="checkbox" id="textureToggle"> Фактура фона (зерно и бумага)</label>
+        <div class="row-inline">
+          <span class="hint">Размер текста рецензии</span>
+          <input type="range" id="reviewSize" min="14" max="24" step="1" aria-label="Размер текста рецензии">
+          <output id="reviewSizeOut" class="hint" style="min-width:40px;text-align:right;"></output>
+        </div>
         <label class="check"><input type="checkbox" id="motionToggle"> Убрать анимации</label>
       </div>
 
@@ -343,6 +394,10 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
           <label class="btn" style="cursor:pointer;">Восстановить из копии
             <input type="file" id="restoreFile" accept=".json,application/json" hidden>
           </label>
+          <button class="btn" id="removeSamples" type="button" hidden>Убрать примеры</button>
+          <label class="btn" style="cursor:pointer;">Импорт из Letterboxd / Goodreads
+            <input type="file" id="csvFile" accept=".csv,text/csv" multiple hidden>
+          </label>
           <button class="btn danger" id="clearBtn" type="button">Очистить библиотеку</button>
         </div>
       </div>
@@ -351,6 +406,7 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
         <h3>О приложении</h3>
         <p>MASTERPIECE — личный дневник просмотренного, прочитанного и пройденного. Приложение бесплатное. Если оно тебе помогает, можно поддержать разработчика добровольным донатом.</p>
         <p>Обложки и картинки добавляет сам пользователь по ссылке или из файла. Приложение ничего не загружает и не хранит на сервере.</p>
+        <p>Версии в браузере, в Telegram и в приложении для Android хранят записи отдельно. Чтобы перенести библиотеку, сделай резервную копию в одной версии и восстанови её в другой.</p>
         <p><a href="privacy.html" style="color: var(--accent);">Политика конфиденциальности</a></p>
         <div class="row-inline" id="donateRow">
           <a class="btn primary" id="donateLink" href="#" target="_blank" rel="noopener">Поддержать</a>
@@ -360,8 +416,13 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
   </main>
 </div>
 
+<div class="toast" id="toast" role="status" hidden>
+  <span id="toastMsg"></span>
+  <button type="button" id="toastAct"></button>
+</div>
 <div class="overlay" id="overlay">
   <div class="sheet" id="viewSheet" role="dialog" aria-modal="true" hidden>
+    <button class="vdel" id="vDelete" type="button" aria-label="Удалить запись" title="Удалить запись"></button>
     <div class="dgrid">
       <div class="dcover" id="dCover"></div>
       <div class="dinfo">
@@ -412,6 +473,7 @@ body.no-motion *, body.no-motion *::before, body.no-motion *::after { animation:
     </div>
     <div class="actions">
       <button class="btn" id="recapClose" type="button">Закрыть</button>
+      <button class="btn primary" id="recapShare" type="button">Поделиться итогами</button>
     </div>
   </div>
   <div class="sheet" id="editSheet" role="dialog" aria-modal="true" hidden>
@@ -477,6 +539,7 @@ const ICONS = {
 };
 ICONS.chart = '<path d="M5 20V11M12 20V5M19 20v-7"/>';
 ICONS.share = '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.9l7.6-4.4M8.2 13.1l7.6 4.4"/>';
+ICONS.trash = '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>';
 const CAT_ICON = { "Фильм": "film", "Сериал": "tv", "Книга": "book", "Мультфильм": "moon", "Аниме": "star", "Игра": "game", "Другое": "dots" };
 const DONATE_URL = ""; // вставь ссылку на Boosty / Ko-fi, когда будет готова; пока кнопка скрыта
 
@@ -502,7 +565,7 @@ items.forEach(i => {
   i.quotes = normQuotes(i.quotes);
 });
 
-let settings = { theme: "cinema", accent: "", bannerPos: 35, bannerData: "", texture: true, reduceMotion: false, goal: 0 };
+let settings = { theme: "cinema", accent: "", bannerPos: 35, bannerData: "", texture: true, reduceMotion: false, goal: 0, reviewSize: 18 };
 try { settings = { ...settings, ...JSON.parse(localStorage.getItem(SKEY) || "{}") }; } catch (e) {}
 
 let screen = "library";
@@ -525,12 +588,14 @@ function saveSettings() {
 }
 
 function applyAll() {
-  const magazine = settings.theme === "magazine";
+  const magazine = currentTheme() === "magazine";
   document.body.className = (magazine ? "theme-magazine" : "theme-cinema") + (settings.texture ? "" : " no-texture") + (settings.reduceMotion ? " no-motion" : "");
   if (settings.accent) document.body.style.setProperty("--accent", settings.accent);
   else document.body.style.removeProperty("--accent");
   document.documentElement.style.setProperty("--banner-pos", settings.bannerPos + "%");
   $("bannerPosOut").textContent = settings.bannerPos + "%";
+  document.documentElement.style.setProperty("--review-size", (settings.reviewSize || 18) + "px");
+  $("reviewSizeOut").textContent = (settings.reviewSize || 18) + "px";
   if (settings.bannerData) document.documentElement.style.setProperty("--banner-img", `url("${settings.bannerData}")`);
   else document.documentElement.style.removeProperty("--banner-img");
   $("themeBtn").innerHTML = svg("contrast");
@@ -549,10 +614,11 @@ function setScreen(s) {
 
 function syncSettings() {
   document.querySelectorAll("[data-theme]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.theme === settings.theme)));
-  $("accentPick").value = settings.accent || (settings.theme === "magazine" ? "#2b4a8b" : "#d7262e");
+  $("accentPick").value = settings.accent || (currentTheme() === "magazine" ? "#2b4a8b" : "#d7262e");
   $("textureToggle").checked = settings.texture;
   $("motionToggle").checked = settings.reduceMotion;
   $("bannerPos").value = settings.bannerPos;
+  $("reviewSize").value = settings.reviewSize || 18;
   $("donateRow").hidden = !DONATE_URL;
   $("donateLink").href = DONATE_URL || "#";
 }
@@ -585,7 +651,7 @@ function render() {
   $("views").innerHTML = viewsList.map(([v, t, ic, n]) =>
     `<button class="nav-btn ${v === view ? "on" : ""}" data-v="${v}" type="button" data-tip="${t} · ${n}" aria-label="${t}">${svg(ic)}</button>`).join("");
 
-  const pool = items.filter(i => inView(i, view));
+  const pool = poolFor(view);
   const cats = [["Все", "all", pool.length], ...CATS.map(c => [c, CAT_ICON[c], pool.filter(i => i.category === c).length])];
   $("nav").innerHTML = cats.map(([c, ic, n]) =>
     `<button class="nav-btn ${c === filter ? "on" : ""}" data-c="${esc(c)}" type="button" data-tip="${esc(c)} · ${n}" aria-label="${esc(c)}">${svg(ic)}</button>`).join("");
@@ -595,6 +661,8 @@ function render() {
   $("genreList").innerHTML = genres.map(g => `<option value="${esc(g)}">`).join("");
   $("sortSel").value = sortKey;
 
+  $("welcome").hidden = items.length > 0;
+  $("removeSamples").hidden = !items.some(i => i.sample);
   const q = query.trim().toLowerCase();
   const list = pool
     .filter(i => filter === "Все" || i.category === filter)
@@ -603,7 +671,7 @@ function render() {
     .sort(SORTS[sortKey]);
   $("grid").innerHTML = list.length
     ? list.map(card).join("")
-    : `<div class="empty">${view === "planned" ? "Список планов пуст. Добавь то, что хочешь открыть." : "Пока пусто. Добавь первую запись или импортируй .md файлы."}</div>`;
+    : `<div class="empty">${items.length ? "Ничего не найдено." : ""}</div>`;
 }
 
 function card(i, idx = 0) {
@@ -855,13 +923,14 @@ $("nav").addEventListener("click", e => {
 });
 $("settingsBtn").addEventListener("click", () => setScreen(screen === "settings" ? "library" : "settings"));
 $("themeBtn").addEventListener("click", () => {
-  settings.theme = settings.theme === "magazine" ? "cinema" : "magazine";
+  settings.theme = currentTheme() === "magazine" ? "cinema" : "magazine";
   saveSettings(); applyAll(); render(); syncSettings();
 });
 $("genreFilter").addEventListener("change", e => { genreFilter = e.target.value; render(); });
 $("sortSel").addEventListener("change", e => { sortKey = e.target.value; render(); });
 $("search").addEventListener("input", e => { query = e.target.value; render(); });
 $("grid").addEventListener("click", e => {
+  if (longPressed) { longPressed = false; return; }
   const c = e.target.closest(".card");
   if (!c) return;
   if (e.target.closest(".status")) { buzz(); cycleStatus(c.dataset.id); return; }
@@ -894,11 +963,7 @@ $("saveBtn").addEventListener("click", () => {
   persist(); buzz(); render();
   if (editingId) openView(editingId); else closeAll();
 });
-$("delBtn").addEventListener("click", () => {
-  if (!editingId || !confirm("Удалить запись?")) return;
-  items = items.filter(x => x.id !== editingId);
-  persist(); closeAll(); render();
-});
+
 $("f_file").addEventListener("change", e => {
   const f = e.target.files[0];
   if (!f) return;
@@ -1011,7 +1076,7 @@ function wrapText(x, text, maxW, maxLines) {
 
 async function makeShareCard(it) {
   const W = 1080, H = 1350, IMG_H = 600;
-  const mag = settings.theme === "magazine";
+  const mag = currentTheme() === "magazine";
   const bg = mag ? "#f2ece0" : "#0c0a0b";
   const fg = mag ? "#1c1a16" : "#ece4e0";
   const mute = mag ? "#6b6357" : "#86797a";
@@ -1146,10 +1211,307 @@ $("dStars").addEventListener("click", e => {
   persist(); render(); openView(viewingId);
 });
 
+
+// ----- Undo toast -----
+let toastTimer = null;
+function showToast(msg, actLabel, onAct, ms = 6000) {
+  $("toastMsg").textContent = msg;
+  const act = $("toastAct");
+  act.textContent = actLabel;
+  act.onclick = () => { hideToast(); onAct(); };
+  $("toast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, ms);
+}
+function hideToast() { $("toast").hidden = true; clearTimeout(toastTimer); }
+
+
+
+// ----- CSV import: Letterboxd (watched.csv, ratings.csv) and Goodreads -----
+function parseCSV(text) {
+  const rows = []; let row = [], field = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); rows.push(row); row = []; field = "";
+    } else field += c;
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  const head = (rows.shift() || []).map(h => h.trim());
+  return rows.filter(r => r.some(v => v.trim())).map(r =>
+    Object.fromEntries(head.map((h, idx) => [h, (r[idx] ?? "").trim()])));
+}
+
+const toISO = d => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? new Date(d.slice(0, 10) + "T12:00:00").toISOString() : new Date().toISOString());
+const dateOnly = d => (d || "").replace(/\//g, "-").slice(0, 10);
+
+function newFromImport(o) {
+  return {
+    id: newId(), title: o.title, category: o.category, genre: "", year: o.year || "",
+    rating: o.rating || "", status: o.status, cover: "", review: o.review || "",
+    quotes: [], notes: "", created: toISO(dateOnly(o.created)),
+    finished: o.status === "done" ? (dateOnly(o.finished) || todayISO()) : ""
+  };
+}
+
+async function importCSV(files) {
+  let added = 0, updated = 0, skipped = 0;
+  for (const f of files) {
+    const rows = parseCSV((await f.text()).replace(/^\uFEFF/, ""));
+    if (!rows.length) { skipped++; continue; }
+    const cols = Object.keys(rows[0]);
+    let list = [];
+    if (cols.includes("Letterboxd URI")) {
+      const hasRating = cols.includes("Rating");
+      list = rows.map(r => ({
+        title: r["Name"], category: "Фильм", status: "done", year: r["Year"],
+        rating: hasRating && r["Rating"] ? Math.round(parseFloat(r["Rating"]) * 2) : "",
+        finished: r["Date"], created: r["Date"]
+      }));
+    } else if (cols.includes("Exclusive Shelf")) {
+      list = rows.map(r => {
+        const shelf = r["Exclusive Shelf"];
+        const status = shelf === "read" ? "done" : shelf === "currently-reading" ? "progress" : "planned";
+        const rt = parseInt(r["My Rating"], 10);
+        return {
+          title: r["Title"], category: "Книга", status,
+          year: r["Year Published"] || r["Original Publication Year"] || "",
+          rating: rt > 0 ? rt * 2 : "", finished: r["Date Read"], created: r["Date Added"] || r["Date Read"],
+          review: r["My Review"]
+        };
+      });
+    } else { skipped++; continue; }
+
+    list.filter(n => n.title).forEach(n => {
+      const idx = items.findIndex(x => x.title.toLowerCase() === n.title.toLowerCase() && x.category === n.category);
+      if (idx >= 0) {
+        const old = items[idx];
+        const status = (n.status === "done" || old.status === "done") ? "done"
+          : (old.status === "progress" ? "progress" : n.status);
+        items[idx] = {
+          ...old, status,
+          rating: n.rating || old.rating,
+          review: n.review || old.review,
+          year: n.year || old.year,
+          finished: status === "done" ? (old.finished || dateOnly(n.finished) || todayISO()) : ""
+        };
+        updated++;
+      } else {
+        items.push(newFromImport(n));
+        added++;
+      }
+    });
+  }
+  persist(); render();
+  alert(`Добавлено: ${added}, обновлено: ${updated}${skipped ? `, пропущено файлов: ${skipped}` : ""}.\n\nДля Letterboxd распакуй архив и выбери watched.csv и ratings.csv.`);
+}
+
+$("csvFile").addEventListener("change", async e => {
+  await importCSV([...e.target.files]);
+  e.target.value = "";
+});
+
+function deleteItem(id) {
+  const removed = items.find(x => x.id === id);
+  if (!removed) return;
+  items = items.filter(x => x.id !== id);
+  persist(); closeAll(); render();
+  showToast("Запись удалена", "Отменить", () => { items.push(removed); persist(); render(); });
+}
+$("delBtn").addEventListener("click", () => { if (editingId) deleteItem(editingId); });
+$("vDelete").addEventListener("click", () => { if (viewingId) deleteItem(viewingId); });
+
+// long press on a card deletes it (with undo)
+let pressTimer = null;
+let longPressed = false;
+$("grid").addEventListener("pointerdown", e => {
+  const c = e.target.closest(".card");
+  if (!c || e.target.closest(".status")) return;
+  longPressed = false;
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(() => { longPressed = true; buzz(); deleteItem(c.dataset.id); }, 600);
+});
+["pointerup", "pointerleave", "pointercancel"].forEach(ev =>
+  $("grid").addEventListener(ev, () => clearTimeout(pressTimer)));
+$("grid").addEventListener("contextmenu", e => { if (e.target.closest(".card")) e.preventDefault(); });
+
+
+// ----- Auto theme, welcome, samples, status filter, review text size -----
+function currentTheme() {
+  if (settings.theme === "auto") return window.matchMedia("(prefers-color-scheme: light)").matches ? "magazine" : "cinema";
+  return settings.theme;
+}
+window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+  if (settings.theme === "auto") { applyAll(); render(); }
+});
+
+function poolFor(v) {
+  const s = $("statusFilter").value;
+  if (s === "all") return items.filter(i => inView(i, v));
+  if (s === "open") return items.filter(i => i.status === "progress" || i.status === "planned");
+  return items.filter(i => i.status === s);
+}
+
+const SAMPLES = [
+  { title: "Ночной портье", category: "Фильм", genre: "нуар", year: "2001", rating: 10, status: "done",
+    review: "Пример рецензии: медленный фильм, где тишина говорит больше диалогов.",
+    quotes: [{ text: "Всё тонет, кроме памяти", author: "" }], notes: "Пример заметки" },
+  { title: "Тёмная вода", category: "Книга", genre: "детектив", year: "2010", rating: 8, status: "progress",
+    review: "", quotes: [], notes: "" },
+  { title: "Лунная дорога", category: "Мультфильм", genre: "фэнтези", year: "2019", rating: "", status: "planned",
+    review: "", quotes: [], notes: "" }
+];
+
+function addSamples() {
+  const now = new Date().toISOString();
+  items.push(...SAMPLES.map(s => ({
+    ...s, id: newId(), cover: "", sample: true, created: now,
+    finished: s.status === "done" ? todayISO() : ""
+  })));
+  persist(); render();
+}
+function removeSamples() {
+  items = items.filter(i => !i.sample);
+  persist(); render();
+}
+
+$("welcomeAdd").addEventListener("click", () => openEditor(null));
+$("welcomeSample").addEventListener("click", addSamples);
+$("removeSamples").addEventListener("click", removeSamples);
+$("statusFilter").addEventListener("change", render);
+$("reviewSize").addEventListener("input", e => { settings.reviewSize = +e.target.value; saveSettings(); applyAll(); });
+
+
+// ----- Year recap picture, 9:16 -----
+async function makeRecapCard(y) {
+  const W = 1080, H = 1920, BAND = 680;
+  const mag = currentTheme() === "magazine";
+  const bg = mag ? "#f2ece0" : "#0c0a0b";
+  const fg = mag ? "#1c1a16" : "#ece4e0";
+  const mute = mag ? "#6b6357" : "#86797a";
+  const surf = mag ? "#ebe4d4" : "#1f1a1c";
+  const acc = settings.accent || (mag ? "#2b4a8b" : "#d7262e");
+  const serif = mag ? "'Fraunces', Georgia, serif" : "'Cormorant Garamond', Georgia, serif";
+  const sans = mag ? "'Source Serif 4', Georgia, serif" : "'Manrope', system-ui, sans-serif";
+  const logoF = mag ? "'Bodoni Moda', Georgia, serif" : "'Cinzel', Georgia, serif";
+  try { await document.fonts.ready; } catch (e) {}
+
+  const done = items.filter(i => i.status === "done" && doneYear(i) === y);
+  const rated = done.filter(i => i.rating);
+  const avg = rated.length ? (rated.reduce((s, i) => s + i.rating, 0) / rated.length).toFixed(1) : "—";
+  const gc = {};
+  done.forEach(i => { if (i.genre) gc[i.genre] = (gc[i.genre] || 0) + 1; });
+  const topGenre = Object.entries(gc).sort((a, b) => b[1] - a[1])[0];
+  const best = [...rated].sort((a, b) => b.rating - a.rating)[0];
+  const openN = items.filter(i => i.status === "progress").length;
+  const byCat = CATS.map(c => [c, done.filter(i => i.category === c).length])
+    .filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const max = Math.max(1, ...byCat.map(([, n]) => n));
+  const goal = settings.goal || 0;
+  const bannerSrc = ((getComputedStyle(document.querySelector(".hero")).backgroundImage || "")
+    .match(/url\(["']?([^"')]+)["']?\)/) || [])[1];
+
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const x = c.getContext("2d");
+  x.fillStyle = bg; x.fillRect(0, 0, W, H);
+
+  const img = bannerSrc ? await loadImg(bannerSrc) : null;
+  if (img) {
+    const s = Math.max(W / img.width, BAND / img.height);
+    const dw = img.width * s, dh = img.height * s;
+    x.drawImage(img, (W - dw) / 2, (BAND - dh) / 2, dw, dh);
+  } else {
+    x.fillStyle = surf; x.fillRect(0, 0, W, BAND);
+  }
+  const g1 = x.createLinearGradient(0, BAND - 320, 0, BAND);
+  g1.addColorStop(0, "rgba(0,0,0,0)"); g1.addColorStop(1, bg);
+  x.fillStyle = g1; x.fillRect(0, BAND - 320, W, 320);
+
+  x.textAlign = "center"; x.textBaseline = "alphabetic";
+  x.shadowColor = "rgba(0,0,0,.6)"; x.shadowBlur = 18;
+  x.fillStyle = "#f5efe6"; x.font = `400 60px ${logoF}`;
+  x.fillText("MASTERPIECE", W / 2, 130);
+  x.shadowBlur = 0;
+
+  x.fillStyle = fg; x.font = `700 240px ${serif}`;
+  x.fillText(String(y), W / 2, 940);
+  x.fillStyle = mute; x.font = `400 46px ${sans}`;
+  x.fillText("итоги года", W / 2, 1010);
+
+  x.fillStyle = acc; x.font = `700 260px ${serif}`;
+  x.fillText(String(done.length), W / 2, 1270);
+  x.fillStyle = mute; x.font = `400 40px ${sans}`;
+  x.fillText("просмотрено и прочитано", W / 2, 1335);
+  if (goal) {
+    const bx = 240, bw = W - 480, by = 1370;
+    x.fillStyle = surf; x.fillRect(bx, by, bw, 14);
+    x.fillStyle = acc; x.fillRect(bx, by, bw * Math.min(1, done.length / goal), 14);
+    x.fillStyle = mute; x.font = `400 32px ${sans}`;
+    x.fillText(`цель ${done.length} из ${goal}`, W / 2, by + 60);
+  }
+
+  x.textAlign = "left";
+  const rows = [
+    ["средняя оценка", avg],
+    ["любимый жанр", topGenre ? topGenre[0] : "—"],
+    ["лучшее", best ? `${best.title} · ${best.rating}` : "—"],
+    ["сейчас в процессе", String(openN)]
+  ];
+  rows.forEach(([label, value], k) => {
+    const yy = 1490 + k * 64;
+    x.fillStyle = mute; x.font = `400 38px ${sans}`;
+    x.fillText(label, 120, yy);
+    x.fillStyle = fg; x.font = `700 52px ${serif}`;
+    x.textAlign = "right";
+    const v = wrapText(x, value, 560, 1)[0] || "—";
+    x.fillText(v, W - 120, yy);
+    x.textAlign = "left";
+  });
+
+  byCat.forEach(([cat, n], k) => {
+    const yy = 1730 + k * 46;
+    x.fillStyle = mute; x.font = `400 34px ${sans}`;
+    x.fillText(cat, 120, yy);
+    x.fillStyle = surf; x.fillRect(400, yy - 22, 440, 14);
+    x.fillStyle = acc; x.fillRect(400, yy - 22, 440 * n / max, 14);
+    x.fillStyle = fg; x.font = `400 34px ${sans}`;
+    x.textAlign = "right"; x.fillText(String(n), W - 120, yy);
+    x.textAlign = "left";
+  });
+
+  x.textAlign = "center";
+  x.fillStyle = mute; x.font = `400 30px ${logoF}`;
+  x.fillText("Наслаждение творчеством и шедеврами", W / 2, H - 40);
+
+  return new Promise(resolve => c.toBlob(resolve, "image/png"));
+}
+
+async function shareRecapCard(y) {
+  const blob = await makeRecapCard(y);
+  if (!blob) return;
+  const name = `masterpiece-${y}-itogi.png`;
+  const file = new File([blob], name, { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: `Итоги ${y}` }); return; }
+    catch (e) { if (e.name === "AbortError") return; }
+  }
+  downloadBlob(name, blob);
+}
+
+$("recapShare").addEventListener("click", () => shareRecapCard($("recapYear").value || String(new Date().getFullYear())));
+
 // ----- Init -----
 $("f_category").innerHTML = CATS.map(c => `<option>${esc(c)}</option>`).join("");
 $("settingsBtn").innerHTML = svg("gear");
 $("recapBtn").innerHTML = svg("chart");
+$("vDelete").innerHTML = svg("trash");
 $("vShare").insertAdjacentHTML("afterbegin", "");
 applyAll();
 persist();
